@@ -1,0 +1,240 @@
+---
+title: "Memo- Group Project- Team 3Idiots"
+author: "Rebecca Liu,Rachel Kim,Sriteja Boppudi"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, comment = "")
+```
+
+The Cloud Cannabis Company (Cloud) operates 4 dispensaries within Michigan, with a 5th opening soon in Detroit. Like most business in this space, they are faced with intense competition and an ever-growing consumer base.
+
+## Stocking Shelves
+
+Across the 4 current locations, Cloud offers product categories such as flower, pre-rolls, concentrates, and edibles. 
+
+For each of these products, average prices (retail), costs (Cloud's acquisition cost), and demand  are listed below:
+
+```{r}
+data.frame(product = c("flower (3.5 grams)", "pre-rolls (1 gram)", 
+                       "concentrates (1 gram)", "edibles (100 mg)"), 
+           price = c(45, 12, 60, 15), 
+           cost = c(25, 5, 50, 10), 
+           demand = c(37, 15, 20, 28)) |>
+  flextable::flextable(cwidth = 2.5, cheight = .15)
+```
+
+Demand is an approximation of the percentage of sales for each product type. 
+
+Cloud's annual product budget is 850,000 dollars. Given the demand needs, how should Cloud allocate their budget over the product types to maximize revenue?
+
+
+Ans: For the sake of this project we assume the demand is in terms of % sold units.
+Hence our equations are as follows:
+
+Constraints: ![](C:\Users\achep\Downloads\Srifiles\problem1.jpeg) 
+
+
+
+
+
+```{r}
+
+library(ROI)
+library(ROI.plugin.glpk)
+objectiveFunction <- c(45,12,60,15)
+constraintValues <- c(850000,0,0,0,0)
+constraintDirections <- c("==","==", "==", "==", "==")
+constraintMatrix <- rbind(c(25,5,50,10),
+                          c(-0.63,0.37,0.37,0.37),
+                          c(0.15,-0.85,0.15,0.15),
+                          c(0.2,0.2,-0.8,0.2),
+                          c(0.28,0.28,0.28,-0.72))
+
+linear_constraints <- L_constraint(L = constraintMatrix, 
+                                   dir = constraintDirections, 
+                                   rhs = constraintValues)
+model_create <- OP(objective = objectiveFunction, constraints = linear_constraints, 
+                   types = rep("C",4),
+                   maximum = TRUE)
+model_solved <- ROI_solve(model_create)
+solution(model_solved)
+solution(model_solved, "objval")
+
+
+
+units_sold <- c(floor(solution(model_solved)))
+
+distribution_of_budget1 <- 
+  c(25*units_sold[1],5*units_sold[2],50*units_sold[3],10*units_sold[4])
+
+
+print("The following shows how the budget should be distributed for different products ")
+distribution_of_budget1
+```
+
+
+## Consumers: A Fickle Bag
+
+Industry experts are seeing the shift towards a more concentrate and edible-dominant field. If edibles or concentrates vary between 25% and 50%, how does that change Cloud's product strategy.
+
+Ans: 
+We assumed the % of units sold for concentrates is varrying between 0.23 and 0.5 and have written down the constraints  as follows :
+
+
+Constraints: ![](C:\Users\achep\Downloads\Srifiles\Problem2.jpeg)
+
+
+<br>
+<br>
+For the sake of this question we used a loop to change the values of Concentrates
+
+```{r}
+
+library(ROI)
+library(ROI.plugin.glpk)
+x <- seq(.25, .5, by = .05)
+length(x)
+x
+
+
+Results<- list(list())
+count<-1
+for(i in x){
+objectiveFunction <- c(45,12,60,15)
+constraintValues <- c(850000,0,0,0,0)
+constraintDirections <- c("==","==", "==", "==", "==")
+constraintMatrix <- rbind(c(25,5,50,10),
+                          c(-0.63,0.37,0.37,0.37),
+                          c(0.15,-0.85,0.15,0.15),
+                          c(i,i,i-1,i),
+                          c(0.48-i,0.48-i,0.48-i,-i-0.52))
+
+linear_constraints <- L_constraint(L = constraintMatrix, 
+                                   dir = constraintDirections, 
+                                   rhs = constraintValues)
+model_create <- OP(objective = objectiveFunction, constraints = linear_constraints, 
+                   types = rep("C",4),
+                   maximum = TRUE)
+model_solved <- ROI_solve(model_create)
+solution_primal<- solution(model_solved)
+objval<- solution(model_solved, "objval")
+
+Results[[count]]<-data.frame(t(solution_primal), 
+             objval = objval, 
+             demand = i)
+count<-count+1
+}
+Results
+
+DF <- data.frame(do.call(rbind,Results))
+
+library(dplyr)
+
+distribution_of_budget <- DF %>%
+                                mutate( budget_flower = 25*X1,
+                                        budget_pre_rolls= 5*X2,
+                                        budget_concentrate = 50*X3,
+                                        budget_edibles = 10*X4,
+                                        Estimated_Revenue = objval) %>%
+                               rename(unit_flowers=X1,unit_pre_rolls =X2,
+                                      unit_concentrate=X3,
+                                      unit_edibles=X4,
+                                      Total_Revenue=objval,
+                                      perecnt_unit_demand_concentrate=demand)
+
+
+print("the following shows the different ways to distribute the budget based on the varrying demand of concentrates and edibles ")
+
+distribution_of_budget 
+```
+
+
+
+
+## Employees
+
+Before the new store opens in Detroit, Cloud has already started the hiring process. Currently there are 20 people willing to work any job within the dispensary, but they have given preferences for each of the main departments. In the `job_preference_list` file, every person is listed with their preference values for each functional unit: the higher the value, the more a person would like to work in that department. Ideally, the employees are distributed equally across the functional units.
+
+
+
+Ans: for this question we first created an empty matrix containing employee preferences and job types.
+Our objective was to maximize the job prefernces for each department 
+
+```{r}
+load("C:/Users/achep/Downloads/job_preference_list.RData")
+View(job_preference)
+
+library(dplyr)
+library(tidyr)
+library(tidyr)
+library(ROI)
+library(ROI.plugin.glpk)
+library(dplyr)
+
+
+cvec <- job_preference$preference
+#max the job preference
+bvec <- c(rep(1, 20), rep(5, 4))
+
+direction <- c(rep('==', 24))
+
+mat <- matrix(0, 24, 80)  
+for (i in c(1:20)) {
+  mat[i, (4*i-3):(4*i)] <- 1
+  i <- i + 1 
+}
+mat[21, sequence(20, from = 1, by = 4)] <- 1
+mat[22, sequence(20, from = 2, by = 4)] <- 1
+mat[23, sequence(20, from = 3, by = 4)] <- 1
+mat[24, sequence(20, from = 4, by = 4)] <- 1
+
+Amat <- mat
+
+solved_model<- OP(cvec, L_constraint(Amat, direction, bvec), maximum = TRUE) |>
+            ROI_solve()
+
+solution <- solution(solved_model)
+
+job_preference$combine <- paste(job_preference$jobType, '-', job_preference$personName)
+
+list <- data.frame(setNames(solution, job_preference$combine))
+
+
+print("the following shows the people matched based on preference ")
+
+print(filter(list, list[ ,1] == 1))
+
+
+```
+
+Would we as a group do this problem:
+
+Problem 1 & 2:
+
+Yes! We believe that in any business setting we would have to allocate different proportions of a given budget in such a way that we maximise the revenue. Also in problem 2 we learnt how to handle allocations during varying demands which is usually the case .
+Hence being able to run simulations to help us understand how much to allocate / how to prioritise the production of one item over others would be really useful.
+
+
+Problem 3:
+
+Being able to cater to the needs and preferences of different individuals is a skill in any business setting. To be able to create an optimized allocation process based on preferences using R (without any interference of personal biases ) is something that we feel is required in the industry. Hence as a group, we think we will be solving such problems again.
+
+
+
+What did we Learn:
+
+Rachel Kim: I learned how to apply methods to get the optimal solution for each issue. Linprog and ROI were the most commonly used methods for optimization, and using for loops and purr to run simulations. I was able to notice that we face so many problems that require simulations, and how useful the packages that we learned are, in order to get optimal solutions. In addition, I felt that it is necessary to use these techniques in the real business world that I will be facing in the future.
+
+
+Rebecca Liu :From this class, we know how to use R to do the simulation and optimization by using different methods such as linprog, ROI for linear problems. We also knew how to use simmer, purr, for loops , ggplot for the simulation and optimization. Also we practiced those skills by solving different realistic business problems which help us better to understand why it is useful for business. But meanwhile, sometimes, the results of the simulation do not work for real conditions, which means we still need to improve the skill and procedure in the future study.
+
+
+Sriteja Boppudi:
+I learned how to solve problems in both linprog and ROI.I also learnt how to run simulations using loops and through Purr.I have been able to understand how to maximise preference selection using ROI. In conclusion, by working with my team on this project i have been able to understand how to solve questions in multiple ways and also think of different ways to interpret the same question - for example while discussing the first question we each interpreted the demand variable in our own way(as % of sales revenue or as % of units sold) , and solved it using our own logic, we realised that irrespective of the different method we used , since we were consistent with our logic we ended up with the similar final answer.
+
+
+
+
+
