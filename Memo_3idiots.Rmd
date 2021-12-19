@@ -209,32 +209,5 @@ print(filter(list, list[ ,1] == 1))
 
 ```
 
-Would we as a group do this problem:
-
-Problem 1 & 2:
-
-Yes! We believe that in any business setting we would have to allocate different proportions of a given budget in such a way that we maximise the revenue. Also in problem 2 we learnt how to handle allocations during varying demands which is usually the case .
-Hence being able to run simulations to help us understand how much to allocate / how to prioritise the production of one item over others would be really useful.
-
-
-Problem 3:
-
-Being able to cater to the needs and preferences of different individuals is a skill in any business setting. To be able to create an optimized allocation process based on preferences using R (without any interference of personal biases ) is something that we feel is required in the industry. Hence as a group, we think we will be solving such problems again.
-
-
-
-What did we Learn:
-
-Rachel Kim: I learned how to apply methods to get the optimal solution for each issue. Linprog and ROI were the most commonly used methods for optimization, and using for loops and purr to run simulations. I was able to notice that we face so many problems that require simulations, and how useful the packages that we learned are, in order to get optimal solutions. In addition, I felt that it is necessary to use these techniques in the real business world that I will be facing in the future.
-
-
-Rebecca Liu :From this class, we know how to use R to do the simulation and optimization by using different methods such as linprog, ROI for linear problems. We also knew how to use simmer, purr, for loops , ggplot for the simulation and optimization. Also we practiced those skills by solving different realistic business problems which help us better to understand why it is useful for business. But meanwhile, sometimes, the results of the simulation do not work for real conditions, which means we still need to improve the skill and procedure in the future study.
-
-
-Sriteja Boppudi:
-I learned how to solve problems in both linprog and ROI.I also learnt how to run simulations using loops and through Purr.I have been able to understand how to maximise preference selection using ROI. In conclusion, by working with my team on this project i have been able to understand how to solve questions in multiple ways and also think of different ways to interpret the same question - for example while discussing the first question we each interpreted the demand variable in our own way(as % of sales revenue or as % of units sold) , and solved it using our own logic, we realised that irrespective of the different method we used , since we were consistent with our logic we ended up with the similar final answer.
-
-
-
 
 
