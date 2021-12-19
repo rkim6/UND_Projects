@@ -1,0 +1,147 @@
+---
+title: "Case2"
+author: "Rachel Kim"
+date: "10/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+CroqPainFix <- distinct(CroqPain, EARN, .keep_all=TRUE)
+save(CroqPainFix, file = 'CroqPainFix.RData')
+
+CroqPainFix[1,2] <- CroqPain[1,2]/1000
+save(CroqPainFix, file = 'CroqPainFix.RData')
+```
+
+
+## correlation p15-p55
+```{r}
+result <- correlation(
+  CroqPainFix, 
+  vars = c("total", "P15", "P25", "P35", "P45", "P55")
+)
+summary(result)
+plot(result, nrobs = 1000)
+```
+
+```{r}
+## create new variable(s)
+CroqPainFix_new <- group_by(CroqPainFix, EARN) %>%
+  mutate(NewEarn = EARN / total) %>%
+  mutate(NewP15 = P15 / total) %>%
+  mutate(NewP25 = P25 / total) %>%
+  mutate(NewP35 = P35 / total) %>%
+  mutate(NewP45 = P45 / total) %>%
+  mutate(NewP55 = P55 / total) %>%
+  mutate(NewCOMP = COMP / total) %>%
+  mutate(NewNCOMP = NCOMP / total) %>%
+  mutate(NewNREST = NREST / total) %>%
+  ungroup()
+save(CroqPainFix_new, file = 'CroqPainFix_new.RData')
+```
+
+```{r}
+CroqPainFix_50 <- CroqPainFix_new %>% 
+  filter(CroqPainFix_new$STOR <= 50)
+save(CroqPainFix_50, file = 'CroqPainFix_50.RData')
+```
+
+```{r}
+CroqPainFix_10 <- CroqPainFix_new %>% 
+  filter(CroqPainFix_new$STOR > 50)
+save(CroqPainFix_10, file = 'CroqPainFix_10.RData')
+```
+
+## 2-2
+```{r}
+result <- regress(
+  CroqPainFix_new, 
+  rvar = "EARN", 
+  evar = c(
+    "STOR", "K", "SIZE", "EMPL", "total", "P15", "P25", "P35", 
+    "P45", "P55", "INC", "COMP", "NCOMP", "NREST", "PRICE", 
+    "CLI"
+  ), 
+  check = "stepwise-backward"
+)
+summary(result, sum_check = "vif")
+```
+
+
+## 2-3 50 stores
+```{r}
+result <- regress(
+  CroqPainFix_50, 
+  rvar = "EARN", 
+  evar = c("K", "SIZE", "P15", "INC", "NREST"), 
+  check = "stepwise-backward"
+)
+summary(result, sum_check = "vif")
+```
+
+## predict 10 stores
+```{r}
+result <- regress(
+  CroqPainFix_50, 
+  rvar = "EARN", 
+  evar = c("K", "SIZE", "P15", "INC", "NREST"), 
+  check = "stepwise-backward"
+)
+summary(result, sum_check = "vif")
+pred <- predict(result, pred_data = CroqPainFix_10)
+print(pred, n = 10)
+CroqPainFix_10 <- store(CroqPainFix_10, pred, name = "pred_reg")
+save(CroqPainFix_10, file = 'CroqPainFix_10.RData')
+```
+
+## performance ratio
+```{r}
+## create new variable(s)
+CroqPainFix_10 <- group_by(CroqPainFix_10, STOR) %>%
+  mutate(pred_perf_ratio = pred_reg / K) %>%
+  ungroup()
+save(CroqPainFix_10, file = 'CroqPainFix_10.RData')
+```
+
+```{r}
+list_CroqPain <- CroqPainFix_10 %>% 
+  filter(pred_perf_ratio >= 0.26)
+```
+
+## 10 new stores' regression of factors
+```{r}
+result <- regress(
+  CroqPainFix, 
+  rvar = "EARN", 
+  evar = c("K", "SIZE", "P15", "INC", "NREST")
+)
+summary(result, sum_check = "vif")
+```
+
+## 10 new stores' regression of earning prediction
+```{r}
+load("~/Desktop/Fall 2021/module 1/stats analysis/case 2/CroqPain_new.rda")
+pred <- predict(result, pred_data = CroqPain_new)
+print(pred, n = 10)
+CroqPain_new <- store(CroqPain_new, pred, name = "pred_reg")
+```
+
+# 10 new stores' predicted performance ratio
+```{r}
+## create new variable(s)
+CroqPain_new <- group_by(CroqPain_new, STOR) %>%
+  mutate(pred_perf_ratio = pred_reg / K) %>%
+  ungroup()
+save(CroqPain_new, file = 'CroqPain_new.rda')
+```
+
+```{r}
+list_CroqPain_final <- CroqPain_new %>% 
+  filter(pred_perf_ratio >= 0.26)
+list_CroqPain_final
+```
