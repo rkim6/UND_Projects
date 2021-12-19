@@ -1,0 +1,242 @@
+---
+title: "MSBR 70200 Case: Shared Social Responsibility"
+author: "Learning Group 4"
+date: "9/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+1. Purchasing Proporition
+1.1. Flat Rate Pricing
+a.
+```{r}
+# Null hypothesis: The proportion of purchases for FR is equal to the proportion of purchases for FR Charity.
+# Alternative hypothesis: The proportion of purchases for FR is different from the proportion of purchases for FR Charity.
+```
+b.
+```{r}
+p_FR <- (77+63)/(12663+15561)
+p_FRCharity <- (79+101)/(14796+15796)
+z_value <- (p_FR - p_FRCharity) / sqrt(p_FR*(1-p_FR)/(12663+15561) + p_FRCharity*(1- p_FRCharity)/(14796+15796))
+z_value
+p_value <- pnorm(z_value, 0, 1, TRUE)*2
+p_value
+
+# The p-value is 0.1268965.
+```
+
+c.
+```{r}
+#Since the p-value is greater than 5%, we should not reject null hypothesis. So the proportion of purchases for FR is equal to the proportion of purchases for FR Charity.
+```
+
+1.2
+a.
+```{r}
+# Null hypothesis: The proportion of purchases for NYOP is equal to the proportion of purchases for NYOP Charity.
+# Alternative hypothesis: The proportion of purchases for NYOP is different from the proportion of purchases for NYOP Charity.
+```
+
+b.
+```{r}
+p_NYOP = (1137+1233)/(14077+14186)
+p_NYOPCharity = (539+628+626)/(12227+13741+18117)
+z_value <- (p_NYOP - p_NYOPCharity) / sqrt(p_NYOP*(1-p_NYOP)/(14077+14186) +  p_NYOPCharity*(1- p_NYOPCharity)/(12227+13741+18117))
+z_value
+p_value <- pnorm(z_value, 0, 1, FALSE)*2
+p_value
+
+# The p-value is 1.444616e-114.
+```
+
+c.
+```{r}
+#Since the p-value is smaller than 5%, we should  reject null hypothesis. So the proportion of purchases for NYOP is different from the proportion of purchases for NYOP Charity.
+```
+
+
+2.
+a.
+```{r}
+# Null hypothesis: The two average unit prices under two conditions are the same.
+# Alternative hypothesis: The two average unit prices under two conditions are different.
+```
+
+b.
+```{r}
+library(radiant)
+load("~/UND/Mod 1/Intro to Statistical Analytics/Case 1/NYOP.rda")
+
+result <- compare_means(
+  dfNYOP, 
+  var1 = "Condition", 
+  var2 = "UnitPrice"
+)
+summary(result, show = FALSE)
+plot(result, plots = "scatter", custom = FALSE)
+```
+
+Since the p-value is smaller than 5%, we should reject the null hypothesis. Therefore, the two average unit prices under two conditions are different. A type I error could have also been committed due to the data set not being representative of the population as all. So, we may consider that a Type I error may occur in a range that is less than 0.001.
+
+c. 
+```{r}
+# Null hypothesis = The difference in the mean of the unit price for purchasing 1 photo is the same for NYOP and NYOP Charity.
+
+# Alternative hypothesis = The difference in the mean of the unit price for purchasing 1 photo is different for NYOP and NYOP Charity.
+```
+
+```{r}
+library(radiant)
+
+## filter and sort the dataset
+number_1 <- dfNYOP %>%
+  filter(Number >= 1 & Number <= 1) %>%
+  select(Condition:UnitPrice)
+register("number_1", "NYOP")
+# dtab(number_1, dec = 2, nr = 100) %>% render()
+
+result <- compare_means(
+  number_1, 
+  var1 = "Condition", 
+  var2 = "UnitPrice"
+)
+summary(result, show = FALSE)
+plot(result, plots = "scatter", custom = FALSE)
+
+
+```
+
+
+Since the p-value is smaller than 5%, we should reject the null hypothesis. Therefore, for people that purchase 1 picture, the difference in the mean of the unit price is the different for NYOP and NYOP Charity.
+
+d.
+```{r}
+# Null hypothesis = The difference in the mean of the unit price for purchasing 6 photos is the same for NYOP and NYOP Charity.
+
+# Alternative hypothesis = The difference in the mean of the unit price for purchasing 6 photos is different for NYOP and NYOP Charity.
+```
+
+```{r}
+library(radiant)
+
+## filter and sort the dataset
+number_6 <- dfNYOP %>%
+  filter(Number >= 6 & Number <= 6) %>%
+  select(Condition:UnitPrice)
+register("number_6", "NYOP")
+# dtab(number_6, dec = 2, nr = 100) %>% render()
+
+result <- compare_means(
+  number_6, 
+  var1 = "Condition", 
+  var2 = "UnitPrice"
+)
+summary(result, show = FALSE)
+plot(result, plots = "scatter", custom = FALSE)
+```
+With the p-value of 0.288, we should not reject the null hypothesis at the 5% significance level. Therefore, the difference in the mean of the unit price for purchasing 6 photos is the same for NYOP and NYOP Charity.
+
+3. 
+a. 
+```{r}
+# FR
+profit_FR <- ((12.95-1.2)*(77+63)+(4592.41+6688.57))/2
+profit_FR
+
+# FR Charity
+profit_FRCharity <- (12.95*(79+101)*0.5+(6476.78+5845.94)-1.2*(79+101))/2
+profit_FRCharity
+
+# NYOP
+NYOP_m_revenue3 <- 4845.27 + 7038.63
+NYOP_table <- dfNYOP %>% 
+  group_by(Condition) %>% 
+  filter(Condition == 'NYOP') 
+
+profit_NYOP <- {sum(NYOP_table$Number * (NYOP_table$UnitPrice - 1.2)) + NYOP_m_revenue3} / 2
+profit_NYOP
+#NYOP Charity
+NYOP_m_revenue4 <- 5690.59 + 6003.44 + 8557.47
+NYOP_table <- dfNYOP %>% 
+  group_by(Condition) %>% 
+  filter(Condition == 'NYOP Charity') 
+NYOP_table
+sum(NYOP_table$Price) 
+# Since there is no loss, the park will donate 50% revenue to charity.
+profit_NYOPCharity <- (sum(NYOP_table$Price)*0.5-1.2*sum(NYOP_table$Number)+NYOP_m_revenue4)/3
+profit_NYOPCharity
+```
+
+b.
+```{r}
+# NYOP Charity > FR Charity > FR > NYOP
+```
+
+c.
+```{r}
+# FR Charity_all
+profit_FRCharity_all <- (12.95*(79+101)+(6476.78+5845.94)-1.2*(79+101))/2
+profit_FRCharity_all
+
+#NYOP Charity_all
+NYOP_m_revenue4 <- 5690.59 + 6003.44 + 8557.47
+NYOP_table <- dfNYOP %>% 
+  group_by(Condition) %>% 
+  filter(Condition == 'NYOP Charity') 
+NYOP_table
+
+profit_NYOPCharity_all <- (sum(NYOP_table$Price)-1.2*sum(NYOP_table$Number)+NYOP_m_revenue4)/3
+profit_NYOPCharity_all
+
+# NYOP Charity_all > FR Charity_all > FR > NYOP
+```
+
+d.
+```{r}
+(profit_NYOPCharity_all - profit_FRCharity_all)*365
+(profit_NYOPCharity_all - profit_FR)*365
+(profit_NYOPCharity_all - profit_NYOP)*365
+```
+
+e.
+```{r}
+# FR
+mean_FR_PhotoRevenue<- ((12.95-1.2)*(77+63))/2
+mean_FR_PhotoRevenue
+  
+# FR Charity
+mean_FRCharity_PhotoRevenue <- (12.95*(79+101)*0.5+-1.2*(79+101))/2
+mean_FRCharity_PhotoRevenue
+
+# NYOP
+NYOP_table <- dfNYOP %>% 
+  group_by(Condition) %>% 
+  filter(Condition == 'NYOP') 
+
+mean_NYOP_PhotoRevenue <- (sum(NYOP_table$Number * (NYOP_table$UnitPrice - 1.2))) / 2
+mean_NYOP_PhotoRevenue
+
+#NYOP Charity
+NYOP_table <- dfNYOP %>% 
+  group_by(Condition) %>% 
+  filter(Condition == 'NYOP Charity') 
+NYOP_table
+sum(NYOP_table$Price) 
+# Since there is no loss, the park will donate 50% revenue to charity.
+mean_NYOPCharity_PhotoRevenue <- (sum(NYOP_table$Price)*0.5-1.2*sum(NYOP_table$Number))/3
+mean_NYOPCharity_PhotoRevenue
+
+# In part (a), our original ranking for the combined revenue is: 
+# NYOP Charity > FR Charity > FR > NYOP
+# But if we exclude the merchandise revenue and look at the photo revenue only, the new  ranking would be:
+# NYOP Charity > FR > FR Charity > NYOP
+# So the merchandise revenue would make a difference to the profit that the park earns.
+```
+
